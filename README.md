@@ -1,5 +1,7 @@
 # Agent Config Doctor
 
+[![test](https://github.com/shuowenzhang1-netizen/agent-config-doctor/actions/workflows/test.yml/badge.svg)](https://github.com/shuowenzhang1-netizen/agent-config-doctor/actions/workflows/test.yml)
+
 Local-first scanner for AI coding agent configs, MCP files, skills, prompts, and workflow permissions.
 
 > Scan your AI coding agent setup before it leaks secrets or runs risky tools.
@@ -50,6 +52,37 @@ Fail only on high or critical findings:
 agent-config-doctor scan . --fail-on high
 ```
 
+## Use In GitHub Actions
+
+Add this workflow to scan agent-facing files on every pull request:
+
+```yaml
+name: agent-config-doctor
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Agent Config Doctor
+        run: python -m pip install git+https://github.com/shuowenzhang1-netizen/agent-config-doctor.git
+      - name: Scan AI agent configuration
+        run: agent-config-doctor scan . --fail-on high
+```
+
+This keeps the workflow read-only and fails the build when high or critical findings are present.
+
 ## Example Output
 
 ```text
@@ -69,6 +102,12 @@ Remote script execution
 curl piped into a shell can execute unreviewed remote code.
 Fix: Download scripts to a temporary file, verify checksum/signature, then run with least privilege.
 ```
+
+## Sample Unsafe Repo
+
+The `examples/unsafe-agent` directory is intentionally unsafe. It exists to make the scanner behavior easy to inspect and to provide a reproducible demo for screenshots, tests, and launch posts.
+
+The sample includes patterns such as secret reads, destructive commands, remote script execution, broad MCP filesystem access, and high-privilege GitHub Actions permissions. These are test fixtures, not real credentials or recommended instructions.
 
 ## What It Scans
 
@@ -95,11 +134,19 @@ Current alpha rules focus on patterns that are easy to understand and verify:
 - suspicious exfiltration language
 - unpinned package install commands inside agent instructions
 
-## Positioning
+## What Makes It Different
 
-Large security platforms already scan AI agents. This project is for developers who want a fast local check before trusting a repo, skill, or MCP config.
+Agent Config Doctor is not trying to be a full security platform. It focuses on the files that AI coding agents actually read before they act.
 
-Agent Config Doctor is not a replacement for Snyk, Semgrep, Trivy, SkillSpector, or professional review. It is a preflight check for agent-facing files.
+- Local-first: no project files are uploaded.
+- Zero runtime dependencies: easy to inspect, fork, and run in CI.
+- Agent-specific: scans `AGENTS.md`, `CLAUDE.md`, MCP configs, skills, and workflow permissions.
+- Fix-oriented: every finding includes a short remediation.
+- CI-friendly: text output for humans, JSON output for automation, and `--fail-on` for pull requests.
+
+Large security platforms already scan AI agents. This project is for developers who want a fast preflight check before trusting a repo, skill, or MCP config.
+
+Agent Config Doctor is not a replacement for Snyk, Semgrep, Trivy, SkillSpector, or professional review. It is a small guardrail for agent-facing files.
 
 ## Roadmap
 
