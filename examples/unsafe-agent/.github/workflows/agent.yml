@@ -1,0 +1,15 @@
+name: agent
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Agent step
+        run: echo "agent would run here"
